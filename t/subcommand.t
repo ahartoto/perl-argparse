@@ -148,5 +148,41 @@ ok($n->current_command eq 'list', 'current_command is list');
 ok($n->foo, "list's foo is true");
 ok($n->boo, "list's boo is true");
 
+# Add test to check subparser configs
+$p = Getopt::ArgParse->new_parser();
+$p->add_argument(
+    '--lower',
+    'type' => 'Bool',
+);
+$sp = $p->add_subparsers(
+    title => 'Here are my other subcommands',
+    description => 'These subcommands will have different configurations',
+    parser_configs => ['posix_default', 'no_ignore_case'],
+);
+my $cfg_p = $p->add_parser(
+    'config',
+    help => 'This is my test config command',
+);
+$cfg_p->add_argument(
+    '--lower',
+    'type' => 'Bool',
+);
+
+lives_ok(
+    sub {
+        $n = $p->parse_args(('--loWer'));
+    },
+);
+ok($n->lower, 'no configuration is honored');
+$p->namespace(undef);
+
+throws_ok(
+    sub {
+        $n = $p->parse_args(('config', '--loWer'));
+    },
+    qr/Unknown option: loWer/,
+    'subparser configuration is honored'
+);
+
 done_testing;
 

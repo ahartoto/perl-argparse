@@ -14,20 +14,20 @@ use constant {
     TYPE_SCALAR => 1,
     TYPE_ARRAY  => 2,
     TYPE_COUNT  => 3,
-    TYPE_PAIR	=> 4, # key=value pair
-    TYPE_BOOL	=> 5,
+    TYPE_PAIR   => 4, # key=value pair
+    TYPE_BOOL   => 5,
 
     CONST_TRUE   => 1,
     CONST_FALSE  => 0,
 
     # Export these?
-	ScalarArg => 'scalar',
-	ArrayArg  => 'Array',
+    ScalarArg => 'scalar',
+    ArrayArg  => 'Array',
     PairArg   => 'Pair',
     CountArg  => 'Count',
     BoolArg   => 'Bool',
 
-	# Internal
+    # Internal
     ERROR_PREFIX => 'Getopt::ArgParse: ',
     PRINT_REQUIRED => 1,
     PRINT_OPTIONAL => 2,
@@ -36,7 +36,7 @@ use constant {
 # Allow customization
 # default actions
 my %Action2ClassMap = (
-	'_store'       => 'Getopt::ArgParse::ActionStore',
+    '_store'       => 'Getopt::ArgParse::ActionStore',
     '_append'      => 'Getopt::ArgParse::ActionAppend',
     '_count'       => 'Getopt::ArgParse::ActionCount',
     # Not supported - Maybe in the future
@@ -48,7 +48,7 @@ my %Type2ConstMap = (
     ''        => TYPE_UNDEF(),
     'Scalar'  => TYPE_SCALAR(),
     'Array'   => TYPE_ARRAY(),
-	'Count'   => TYPE_COUNT(),
+    'Count'   => TYPE_COUNT(),
     'Pair'    => TYPE_PAIR(),
     'Bool'    => TYPE_BOOL(),
 );
@@ -214,7 +214,8 @@ sub add_subparsers {
 
     my $title       = (delete $args->{title} || 'subcommands') . ':';
     my $description = delete $args->{description} || '';
-
+    my $parser_configs = delete $args->{parser_configs} || [];
+    
     _croak $self->error_prefix . sprintf(
         'Unknown parameters: %s',
         join(',', keys %$args)
@@ -226,6 +227,7 @@ sub add_subparsers {
 
     $self->{-subparsers}{-title} = $title;
     $self->{-subparsers}{-description} = $description;
+    $self->{-subparsers}{-parser_configs} = $parser_configs;
     $self->{-subparsers}{-alias_map} = {};
 
     my $hp = $self->add_parser(
@@ -306,7 +308,7 @@ sub add_parser {
         prog                => $prog,
         aliases             => $aliases, # subcommand
         help                => $help,
-        parents			    => $parents,
+        parents             => $parents,
         description         => $description,
         error_prefix        => $self->error_prefix,
         print_usage_if_help => $self->print_usage_if_help,
@@ -336,7 +338,7 @@ sub add_argument {
 
     return unless @_; # mostly harmless
     #
-    # FIXME: This is for merginng parent parents This is a dirty hack
+    # FIXME: This is for merging parent parents This is a dirty hack
     # and should be done properly by merging internal specs
     # and subcommand merging is missing
     #
@@ -686,6 +688,10 @@ sub _parse_subcommand {
     my ($cmd, $subparser) = @_;
 
     $subparser->namespace($self->namespace);
+    my $parser_configs = $self->{'-subparsers'}{'-parser_configs'};
+    if (defined $parser_configs && scalar(@{ $parser_configs }) > 0) {
+        $subparser->parser_configs($parser_configs);
+    }
     $subparser->parse_args(@{$self->{-argv}});
 
     $self->{-argv} = $subparser->{-argv};
